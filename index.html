@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sorting Algorithm Visualizer</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- custom CSS -->
+  <link rel="stylesheet" href="./css/styles.css"/>
+</head>
+
+<body class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header__inner">
+      <h1 class="header__title">Algorithm Visualizer</h1>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="layout">
+
+    <!-- LEFT PANEL -->
+    <aside id="left-panel" class="panel panel--left is-open">
+      <div class="panel__body">
+        <!-- Toggle Button (Internal) -->
+        <button id="toggle-left-panel" class="panel__toggle panel__toggle--right">
+          <svg id="left-toggle-icon" class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
+        </button>
+
+        <!-- Panel Content -->
+        <div id="left-panel-content" class="panel__content">
+          <h2 class="panel__title">Controls</h2>
+
+          <!-- Algorithm Selection -->
+          <div class="form__group">
+            <label for="algorithm-select" class="form__label">Algorithm</label>
+            <select id="algorithm-select" class="form__select">
+              <option>Bubble Sort</option>
+              <option>Insertion Sort</option>
+              <option>Selection Sort</option>
+              <option>Merge Sort</option>
+              <option>Quick Sort</option>
+            </select>
+          </div>
+
+          <!-- Array Size -->
+          <div class="form__group">
+            <label for="size-select" class="form__label">Array Size</label>
+            <select id="size-select" class="form__select">
+              <option value="10">Small (10)</option>
+              <option value="25">Medium (25)</option>
+              <option value="50">Large (50)</option>
+            </select>
+          </div>
+
+          
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL -->
+    <aside id="right-panel" class="panel panel--right">
+      <div class="panel__body">
+        <!-- Toggle Button (External) -->
+        <button id="toggle-right-panel" class="panel__toggle panel__toggle--left">
+          <svg id="right-toggle-icon" class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"></svg>
+        </button>
+
+        <!-- Panel Content -->
+        <div id="right-panel-content" class="panel__content panel__content--scroll">
+          <h2 id="learn-title" class="panel__title">Learn About Sorting</h2>
+          <div id="learn-content" class="learn">
+            <p>Select an algorithm from the control panel to learn about it here.</p>
+
+            <div id="bubble-sort-info" class="hidden">
+              <h3 class="learn__subtitle">Bubble Sort</h3>
+              <p>Bubble Sort is a simple sorting algorithm that repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order. The pass through the list is repeated until the list is sorted.</p>
+              <h4 class="learn__subheader">Time Complexity</h4>
+              <ul class="list">
+                <li><strong>Worst Case:</strong> O(n²)</li>
+                <li><strong>Average Case:</strong> O(n²)</li>
+                <li><strong>Best Case:</strong> O(n)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN VISUALIZATION AREA -->
+    <main id="viz-container" class="main">
+      <div id="viz-label" class="viz-label">
+        <div id="viz-title" class="viz-title"></div>
+        <div id="viz-badges" class="viz-badges"></div>
+      </div>
+      <div id="bar-container" class="bar-container"></div>
+
+      <div id="viz-controls" class="controls">
+        <div class="controls__row">
+          <button id="play-pause-btn" class="btn btn--accent btn--wide">
+            <svg class="icon-sm" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+            <span>Play</span>
+          </button>
+
+          <button id="reset-btn" class="btn btn--muted btn--wide" title="Reset array">
+            <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0019.418 15m0 0H15"></path></svg>
+            <span>Reset</span>
+          </button>
+
+          <div class="controls__speed">
+            <label for="speed-slider" class="form__label form__label--center">Speed</label>
+            <!-- Wider range: lower default slows; higher max gives much faster top-end -->
+            <input type="range" id="speed-slider" min="0.1" max="4.0" step="0.1" value="0.4" class="range">
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- App entry (ES module so we can import algorithms later) -->
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
