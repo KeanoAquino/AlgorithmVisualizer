@@ -3,6 +3,7 @@
 
 import { Visualizer } from './visualizer.js';
 import { bubbleSort } from './algorithms/bubbleSort.js';
+import { mergeSort } from './algorithms/mergeSort.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Panels and shared elements
@@ -164,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Map algorithm names to runner functions
   const RUNNERS = {
     'Bubble Sort': bubbleSort,
+    'Merge Sort': mergeSort,
     // Other algorithms can be added here when implemented
   };
 
