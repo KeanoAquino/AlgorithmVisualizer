@@ -245,6 +245,7 @@ export class Visualizer {
   }
 
   // swap two values visually and then in data; await height morph
+  // Also swaps state classes (is-special, is-partly) so colors follow values
   async swap(i, j) {
     await this._awaitIfPaused();
     if (i === j) return;
@@ -252,11 +253,53 @@ export class Visualizer {
     const b = this.currentArray[j];
     const scale = this._lastScale || 1;
     const bars = this._bars();
+
+    // Swap heights (triggers CSS transition animation)
     if (bars[i]) bars[i].style.height = `${Math.max(1, Math.round(b * scale))}px`;
     if (bars[j]) bars[j].style.height = `${Math.max(1, Math.round(a * scale))}px`;
+
+    // Swap state classes so colors follow the values during the animation
+    this._swapStates(i, j);
+
     await this.sleep(300);
     // sync data after visual completes
     [this.currentArray[i], this.currentArray[j]] = [b, a];
+  }
+
+  // Helper: swap visual state classes between two indices
+  _swapStates(i, j) {
+    const bars = this._bars();
+    const barI = bars[i];
+    const barJ = bars[j];
+    if (!barI || !barJ) return;
+
+    // State classes to swap (excluding is-comparing which is position-based, and is-sorted which is final)
+    const states = ['is-special', 'is-partly'];
+
+    for (const cls of states) {
+      const iHas = barI.classList.contains(cls);
+      const jHas = barJ.classList.contains(cls);
+
+      // Swap class presence
+      if (iHas && !jHas) {
+        barI.classList.remove(cls);
+        barJ.classList.add(cls);
+      } else if (jHas && !iHas) {
+        barJ.classList.remove(cls);
+        barI.classList.add(cls);
+      }
+      // If both have it or neither has it, no change needed
+    }
+
+    // Also update internal tracking sets
+    const swapInSet = (set, a, b) => {
+      const aIn = set.has(a);
+      const bIn = set.has(b);
+      if (aIn && !bIn) { set.delete(a); set.add(b); }
+      else if (bIn && !aIn) { set.delete(b); set.add(a); }
+    };
+    swapInSet(this._special, i, j);
+    swapInSet(this._partly, i, j);
   }
 
   // overwrite a single index with new value; animate then finalize
@@ -269,5 +312,28 @@ export class Visualizer {
     await this.sleep(260);
     await this.highlight([]);
     this.markSorted(index);
+  }
+
+  // blink: flash a bar with a specified color to draw attention
+  // Options:
+  //   color: CSS color string (e.g., 'var(--bar-red)', '#ff0000')
+  //   times: number of blink cycles (default 3)
+  //   interval: ms between on/off toggles (default 150)
+  async blink(index, { color = 'var(--bar-red)', times = 3, interval = 150 } = {}) {
+    await this._awaitIfPaused();
+    const bar = this._bars()[index];
+    if (!bar) return;
+
+    for (let i = 0; i < times; i++) {
+      await this._awaitIfPaused();
+      // Apply blink color via inline style (overrides CSS classes)
+      bar.style.backgroundColor = color;
+      await new Promise(r => setTimeout(r, interval));
+
+      await this._awaitIfPaused();
+      // Remove inline style to revert to CSS-controlled color
+      bar.style.backgroundColor = '';
+      await new Promise(r => setTimeout(r, interval));
+    }
   }
 }
