@@ -4,6 +4,7 @@
 import { Visualizer } from './visualizer.js';
 import { bubbleSort } from './algorithms/bubbleSort.js';
 import { mergeSort } from './algorithms/mergeSort.js';
+import { heapSort } from './algorithms/heapSort.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   // Panels and shared elements
@@ -74,7 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'Insertion Sort': { title: 'Insertion Sort', best: 'O(n)', average: 'O(n^2)', worst: 'O(n^2)' },
     'Selection Sort': { title: 'Selection Sort', best: 'O(n^2)', average: 'O(n^2)', worst: 'O(n^2)' },
     'Merge Sort': { title: 'Merge Sort', best: 'O(nlogn)', average: 'O(nlogn)', worst: 'O(nlogn)' },
-    'Quick Sort': { title: 'Quick Sort', best: 'O(nlogn)', average: 'O(nlogn)', worst: 'O(n^2)' }
+    'Quick Sort': { title: 'Quick Sort', best: 'O(nlogn)', average: 'O(nlogn)', worst: 'O(n^2)' },
+    'Heap Sort': { title: 'Heap Sort', best: 'O(nlogn)', average: 'O(nlogn)', worst: 'O(nlogn)' }
   };
 
   function formatComplexity(str) {
@@ -166,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const RUNNERS = {
     'Bubble Sort': bubbleSort,
     'Merge Sort': mergeSort,
+    'Heap Sort': heapSort,
     // Other algorithms can be added here when implemented
   };
 

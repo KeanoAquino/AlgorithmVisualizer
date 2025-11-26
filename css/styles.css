@@ -196,13 +196,14 @@ body.app {
 /* Persistent states */
 .viz-bar.is-partly { background-color: var(--bar-yellow); }
 .viz-bar.is-sorted { background-color: var(--bar-green); }
-.viz-bar.is-special { background-color: var(--bar-red); }
 
-/* Comparing overrides all visually: raise and purple */
+/* Comparing: purple + raised (applied via JS transform) */
 .viz-bar.is-comparing {
-  background-color: var(--bar-purple) !important;
-  /* Dynamic raising transform applied inline via JS to align tops just above tallest bar */
+  background-color: var(--bar-purple);
 }
+
+/* Special (red) overrides comparing when both are present (e.g., largest node in heap) */
+.viz-bar.is-special { background-color: var(--bar-red); }
 
 /* Controls */
 .controls { width: 100%; max-width: 640px; margin: 0 auto; padding-top: 16px; }
