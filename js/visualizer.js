@@ -336,4 +336,115 @@ export class Visualizer {
       await new Promise(r => setTimeout(r, interval));
     }
   }
+
+  // shiftToPosition: "slide" a bar from fromIndex to toIndex by animating all bars
+  // between them simultaneously. Creates the illusion of one bar sliding left
+  // while others shift right (or vice versa).
+  //
+  // Example: shiftToPosition(3, 0) on [6, 4, 1, 5]
+  //   - Bar at index 3 (value 5) slides to index 0
+  //   - Bars at indices 0, 1, 2 shift right to indices 1, 2, 3
+  //   - Result: [5, 6, 4, 1]
+  //
+  // Only affects heights; does not change color states (caller handles that).
+  async shiftToPosition(fromIndex, toIndex) {
+    await this._awaitIfPaused();
+    if (fromIndex === toIndex) return;
+
+    const bars = this._bars();
+    const arr = this.currentArray;
+    const scale = this._lastScale || 1;
+
+    // Determine direction: shifting left (from > to) or right (from < to)
+    const shiftingLeft = fromIndex > toIndex;
+
+    // Save the value being moved
+    const movingValue = arr[fromIndex];
+
+    // Calculate and apply all new heights simultaneously (before any await)
+    if (shiftingLeft) {
+      // Value at fromIndex moves to toIndex; everything in between shifts right
+      // Example: [A, B, C, D] with from=3, to=0 → [D, A, B, C]
+      const movingHeight = Math.max(1, Math.round(movingValue * scale));
+      
+      // Apply heights: position toIndex gets movingValue, others shift right
+      for (let i = fromIndex; i >= toIndex; i--) {
+        if (i === toIndex) {
+          bars[i].style.height = `${movingHeight}px`;
+        } else {
+          // This position gets the value from its left neighbor
+          const neighborValue = arr[i - 1];
+          const neighborHeight = Math.max(1, Math.round(neighborValue * scale));
+          bars[i].style.height = `${neighborHeight}px`;
+        }
+      }
+
+      // Update the data array to match
+      for (let i = fromIndex; i > toIndex; i--) {
+        arr[i] = arr[i - 1];
+      }
+      arr[toIndex] = movingValue;
+
+    } else {
+      // Value at fromIndex moves to toIndex; everything in between shifts left
+      // Example: [A, B, C, D] with from=0, to=3 → [B, C, D, A]
+      const movingHeight = Math.max(1, Math.round(movingValue * scale));
+
+      // Apply heights: position toIndex gets movingValue, others shift left
+      for (let i = fromIndex; i <= toIndex; i++) {
+        if (i === toIndex) {
+          bars[i].style.height = `${movingHeight}px`;
+        } else {
+          // This position gets the value from its right neighbor
+          const neighborValue = arr[i + 1];
+          const neighborHeight = Math.max(1, Math.round(neighborValue * scale));
+          bars[i].style.height = `${neighborHeight}px`;
+        }
+      }
+
+      // Update the data array to match
+      for (let i = fromIndex; i < toIndex; i++) {
+        arr[i] = arr[i + 1];
+      }
+      arr[toIndex] = movingValue;
+    }
+
+    // Wait for CSS transition to animate all height changes
+    await this.sleep(250);
+  }
+
+  // lowerBar: lower a single bar from its raised state back to the array
+  // and apply a color state (e.g., 'partly' for yellow, 'sorted' for green)
+  async lowerBar(index, state = 'partly') {
+    await this._awaitIfPaused();
+    const bar = this._bars()[index];
+    if (!bar) return;
+
+    // Remove comparing state (this triggers the CSS transition to lower)
+    bar.classList.remove('is-comparing');
+    this._highlighted.delete(index);
+    bar.style.transform = 'translateY(0)';
+
+    // Apply the target state
+    if (state === 'sorted') {
+      this.markSorted(index);
+    } else if (state === 'partly') {
+      this._partly.add(index);
+      bar.classList.add('is-partly');
+    }
+
+    // Brief pause to let the lowering animation complete
+    await this.sleep(150);
+  }
+
+  // clearPartlySorted: remove the partly sorted (yellow) state from specified indices
+  clearPartlySorted(indices) {
+    const bars = this._bars();
+    for (const i of indices) {
+      if (bars[i]) {
+        bars[i].classList.remove('is-partly');
+        this._partly.delete(i);
+      }
+    }
+  }
 }
