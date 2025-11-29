@@ -6,6 +6,7 @@ import { bubbleSort } from './algorithms/bubbleSort.js';
 import { mergeSort } from './algorithms/mergeSort.js';
 import { heapSort } from './algorithms/heapSort.js';
 import { selectionSort } from './algorithms/selectionSort.js';
+import { getAlgorithmDescription } from './algorithmDescriptions.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -81,6 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
     'Heap Sort': { title: 'Heap Sort', best: 'O(nlogn)', average: 'O(nlogn)', worst: 'O(nlogn)' }
   };
 
+  // Right panel content updater
+  const learnContent = document.getElementById('learn-content');
+  function updateRightPanelContent(algoName) {
+    if (!learnContent) return;
+    learnContent.innerHTML = getAlgorithmDescription(algoName);
+  }
+
   function formatComplexity(str) {
     // Replace n^k with n<sup>k</sup> and normalize unicode superscript ²
     let out = str.replace(/n\^(\d+)/g, 'n<sup>$1</sup>');
@@ -136,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentAlgorithmName = algorithmSelect.options[algorithmSelect.selectedIndex].text;
     updateLabel(currentAlgorithmName);
+    updateRightPanelContent(currentAlgorithmName);
   }
 
   // Visualization basics via Visualizer class
@@ -314,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await cancelRun();
       currentAlgorithmName = name;
       updateLabel(name);
+      updateRightPanelContent(name);
       if (changed) {
         visualizer.reset(); // regenerate array when switching algorithms
       }

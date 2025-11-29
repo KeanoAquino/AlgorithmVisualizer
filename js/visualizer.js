@@ -30,9 +30,22 @@ export class Visualizer {
     this.reset();
   }
 
-  // Create an array of unique heights: 1..size, then shuffle (Fisher-Yates)
+  // Create an array of heights: 1..size with ~10% duplicates, then shuffle (Fisher-Yates)
   createRandomArray(size) {
     const array = Array.from({ length: size }, (_, i) => i + 1);
+    
+    // Replace ~10% of elements with duplicates of other elements
+    const numDuplicates = Math.max(1, Math.floor(size * 0.1));
+    for (let d = 0; d < numDuplicates; d++) {
+      const sourceIdx = Math.floor(Math.random() * size);
+      let targetIdx = Math.floor(Math.random() * size);
+      while (targetIdx === sourceIdx) {
+        targetIdx = Math.floor(Math.random() * size);
+      }
+      array[targetIdx] = array[sourceIdx];
+    }
+    
+    // Fisher-Yates shuffle
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [array[i], array[j]] = [array[j], array[i]];
