@@ -122,7 +122,7 @@ body.app {
 
 /* Visualization label */
 .viz-label { width: 100%; max-width: 800px; margin: 0 auto 8px auto; text-align: center; }
-.viz-title { font-size: 1.3rem; font-weight: 800; color: var(--mt-text); margin: 0 0 4px 0; }
+.viz-title { font-size: 3rem; font-weight: 800; color: var(--mt-text); margin: 0 0 4px 0; }
 .viz-badges { 
   display: inline-flex; 
   gap: 8px; 
