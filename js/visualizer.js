@@ -223,6 +223,47 @@ export class Visualizer {
     await this.sleep(240);
   }
 
+  // highlightWithSpecial: Raise bars with differentiated colors - purple (comparing) and red (special).
+  // Used by insertion sort to show anchor bar (purple) vs the bar being inserted (red/bigger value).
+  // Both purple and red bars are raised to the same height.
+  async highlightWithSpecial(purpleIndices, redIndices) {
+    await this._awaitIfPaused();
+    
+    // Update purple (is-comparing) state
+    const addPurple = (i) => this._addClass(i, 'is-comparing');
+    const remPurple = (i) => this._removeClass(i, 'is-comparing');
+    this._diffUpdate(this._highlighted, purpleIndices || [], addPurple, remPurple);
+    
+    // Update red (is-special) state
+    const addRed = (i) => this._addClass(i, 'is-special');
+    const remRed = (i) => this._removeClass(i, 'is-special');
+    this._diffUpdate(this._special, redIndices || [], addRed, remRed);
+    
+    // Combine both sets for raising
+    const allRaised = new Set([...(purpleIndices || []), ...(redIndices || [])]);
+    
+    // Apply dynamic raise to all highlighted bars
+    const tallest = this._tallestBarDrawn || 0;
+    const gap = 8;
+    const bars = this._bars();
+    const containerCap = (this._containerInnerHeight || 0) - 2;
+    
+    for (let i = 0; i < bars.length; i++) {
+      const barEl = bars[i];
+      if (!barEl) continue;
+      if (allRaised.has(i)) {
+        const barH = barEl.getBoundingClientRect().height;
+        let raise = tallest + gap;
+        const maxRaise = containerCap - barH;
+        if (raise > maxRaise) raise = Math.max(gap, maxRaise);
+        barEl.style.transform = `translateY(-${Math.round(raise)}px)`;
+      } else {
+        barEl.style.transform = 'translateY(0)';
+      }
+    }
+    await this.sleep(240);
+  }
+
   // markSpecial: red state independent of highlight; optional short pause
   async markSpecial(indices) {
     await this._awaitIfPaused();
@@ -240,6 +281,117 @@ export class Visualizer {
       this._partly.add(i);
       this._addClass(i, 'is-partly');
     }
+  }
+
+  // clearSpecial: remove the special (red) state from specified indices
+  clearSpecial(indices) {
+    const bars = this._bars();
+    if (!Array.isArray(indices)) indices = [indices];
+    for (const i of indices) {
+      if (bars[i]) {
+        bars[i].classList.remove('is-special');
+        this._special.delete(i);
+      }
+    }
+  }
+
+  // raiseBarSpecial: Raise a single bar as red (special) without affecting other bars' states.
+  // Used by Quick Sort to keep the pivot raised and red throughout partitioning.
+  async raiseBarSpecial(index) {
+    await this._awaitIfPaused();
+    const bars = this._bars();
+    const bar = bars[index];
+    if (!bar) return;
+
+    // Add special (red) state
+    bar.classList.add('is-special');
+    this._special.add(index);
+
+    // Calculate and apply raise
+    const tallest = this._tallestBarDrawn || 0;
+    const gap = 8;
+    const containerCap = (this._containerInnerHeight || 0) - 2;
+    const barH = bar.getBoundingClientRect().height;
+    let raise = tallest + gap;
+    const maxRaise = containerCap - barH;
+    if (raise > maxRaise) raise = Math.max(gap, maxRaise);
+    bar.style.transform = `translateY(-${Math.round(raise)}px)`;
+
+    await this.sleep(200);
+  }
+
+  // lowerBarSpecial: Lower a bar that's raised as special (red) and optionally mark it sorted (green).
+  // Used by Quick Sort to place the pivot in its final position.
+  async lowerBarSpecial(index, markAsSorted = false) {
+    await this._awaitIfPaused();
+    const bars = this._bars();
+    const bar = bars[index];
+    if (!bar) return;
+
+    // Lower the bar
+    bar.style.transform = 'translateY(0)';
+
+    // Remove special state
+    bar.classList.remove('is-special');
+    this._special.delete(index);
+
+    // Mark as sorted if requested
+    if (markAsSorted) {
+      this.markSorted(index);
+    }
+
+    await this.sleep(150);
+  }
+
+  // highlightCompareWithPivot: Raise a bar purple for comparison while keeping pivot raised red.
+  // Does not lower the pivot, only manages the comparison bar.
+  async highlightCompareWithPivot(compareIndex, pivotIndex) {
+    await this._awaitIfPaused();
+    const bars = this._bars();
+    
+    // Clear any previous comparison highlights (but not special/pivot)
+    for (const i of Array.from(this._highlighted)) {
+      if (i !== pivotIndex) {
+        bars[i]?.classList.remove('is-comparing');
+        bars[i].style.transform = 'translateY(0)';
+        this._highlighted.delete(i);
+      }
+    }
+
+    // Raise the comparison bar purple
+    const bar = bars[compareIndex];
+    if (bar) {
+      bar.classList.add('is-comparing');
+      this._highlighted.add(compareIndex);
+
+      const tallest = this._tallestBarDrawn || 0;
+      const gap = 8;
+      const containerCap = (this._containerInnerHeight || 0) - 2;
+      const barH = bar.getBoundingClientRect().height;
+      let raise = tallest + gap;
+      const maxRaise = containerCap - barH;
+      if (raise > maxRaise) raise = Math.max(gap, maxRaise);
+      bar.style.transform = `translateY(-${Math.round(raise)}px)`;
+    }
+
+    await this.sleep(180);
+  }
+
+  // clearCompareHighlight: Lower comparison bars but keep special (pivot) raised.
+  async clearCompareHighlight() {
+    await this._awaitIfPaused();
+    const bars = this._bars();
+    
+    for (const i of Array.from(this._highlighted)) {
+      bars[i]?.classList.remove('is-comparing');
+      // Only lower if not special (pivot)
+      if (!this._special.has(i)) {
+        bars[i].style.transform = 'translateY(0)';
+      }
+      this._highlighted.delete(i);
+    }
+
+    await this.sleep(100);
   }
 
   // markSorted: green final state; remove lower-priority states
@@ -421,6 +573,180 @@ export class Visualizer {
       }
       arr[toIndex] = movingValue;
     }
+
+    // Wait for CSS transition to animate all height changes
+    await this.sleep(250);
+  }
+
+  // insertShiftWithAnchor: For insertion sort visualization.
+  // Shifts a bar from fromIndex to toIndex while keeping an anchor bar raised.
+  // 
+  // - anchorIndex: the bar that was found to be smaller (was purple, now lowered)
+  // - fromIndex: the bar being inserted (moves to toIndex, stays raised red)
+  // - toIndex: where the bar is inserted (should be anchorIndex + 1)
+  // - Bars between toIndex and fromIndex-1 shift right (these are yellow, stay down)
+  //
+  // After the shift: only toIndex is red/raised
+  async insertShiftWithAnchor(fromIndex, toIndex, anchorIndex) {
+    await this._awaitIfPaused();
+    if (fromIndex === toIndex) return;
+    if (fromIndex <= toIndex) return; // Only supports shifting left
+
+    const bars = this._bars();
+    const arr = this.currentArray;
+    const scale = this._lastScale || 1;
+
+    // Save the value being moved
+    const movingValue = arr[fromIndex];
+    const movingHeight = Math.max(1, Math.round(movingValue * scale));
+
+    // Apply heights: position toIndex gets movingValue, bars from toIndex to fromIndex-1 shift right
+    for (let i = fromIndex; i >= toIndex; i--) {
+      if (i === toIndex) {
+        bars[i].style.height = `${movingHeight}px`;
+      } else {
+        // This position gets the value from its left neighbor
+        const neighborValue = arr[i - 1];
+        const neighborHeight = Math.max(1, Math.round(neighborValue * scale));
+        bars[i].style.height = `${neighborHeight}px`;
+      }
+    }
+
+    // Calculate the raise offset (same logic as highlight())
+    const tallest = this._tallestBarDrawn || 0;
+    const gap = 8;
+    const containerCap = (this._containerInnerHeight || 0) - 2;
+    
+    // Helper to calculate raise for a bar
+    const calcRaise = (barEl) => {
+      const barH = barEl.getBoundingClientRect().height;
+      let raise = tallest + gap;
+      const maxRaise = containerCap - barH;
+      if (raise > maxRaise) raise = Math.max(gap, maxRaise);
+      return Math.round(raise);
+    };
+
+    // Update states:
+    // - anchorIndex: lower it and mark yellow (it's now part of sorted portion)
+    // - fromIndex: lower it, remove red, mark yellow (original position, bar moved away)
+    // - toIndex: keep raised red (the inserted bar, bigger value)
+    // - Bars between toIndex+1 and fromIndex-1: mark yellow (they shifted right)
+    
+    // Lower anchor and mark yellow
+    bars[anchorIndex].classList.remove('is-comparing');
+    bars[anchorIndex].style.transform = 'translateY(0)';
+    bars[anchorIndex].classList.add('is-partly');
+    this._highlighted.delete(anchorIndex);
+    this._partly.add(anchorIndex);
+    
+    // Lower fromIndex, remove red, and mark yellow
+    bars[fromIndex].classList.remove('is-comparing');
+    bars[fromIndex].classList.remove('is-special');
+    bars[fromIndex].style.transform = 'translateY(0)';
+    bars[fromIndex].classList.add('is-partly');
+    this._highlighted.delete(fromIndex);
+    this._special.delete(fromIndex);
+    this._partly.add(fromIndex);
+    
+    // Mark bars between toIndex+1 and fromIndex-1 as yellow (they shifted)
+    for (let i = toIndex + 1; i < fromIndex; i++) {
+      bars[i].classList.add('is-partly');
+      this._partly.add(i);
+    }
+    
+    // Keep toIndex raised red (the inserted bar, bigger value)
+    bars[toIndex].classList.add('is-special');
+    const toRaise = calcRaise(bars[toIndex]);
+    bars[toIndex].style.transform = `translateY(-${toRaise}px)`;
+    this._special.add(toIndex);
+
+    // Update the data array to match
+    for (let i = fromIndex; i > toIndex; i--) {
+      arr[i] = arr[i - 1];
+    }
+    arr[toIndex] = movingValue;
+
+    // Wait for CSS transition to animate all height changes
+    await this.sleep(250);
+  }
+
+  // insertShiftToZero: For insertion sort when inserting at position 0 (no anchor found).
+  // 
+  // - fromIndex: the bar being inserted (stays raised, moves to position 0)
+  // - All bars from 0 to fromIndex-1 shift right and become/stay yellow
+  // - The bar at fromIndex moves to 0, staying raised red (bigger value)
+  // - Original position fromIndex becomes yellow and lowered
+  //
+  // After the shift: only position 0 is red/raised
+  async insertShiftToZero(fromIndex) {
+    await this._awaitIfPaused();
+    if (fromIndex === 0) return;
+
+    const bars = this._bars();
+    const arr = this.currentArray;
+    const scale = this._lastScale || 1;
+
+    // Save the value being moved
+    const movingValue = arr[fromIndex];
+    const movingHeight = Math.max(1, Math.round(movingValue * scale));
+
+    // Calculate the raise offset (same logic as highlight())
+    const tallest = this._tallestBarDrawn || 0;
+    const gap = 8;
+    const containerCap = (this._containerInnerHeight || 0) - 2;
+    
+    const calcRaise = (barEl) => {
+      const barH = barEl.getBoundingClientRect().height;
+      let raise = tallest + gap;
+      const maxRaise = containerCap - barH;
+      if (raise > maxRaise) raise = Math.max(gap, maxRaise);
+      return Math.round(raise);
+    };
+
+    // Apply heights: position 0 gets movingValue, bars from 0 to fromIndex-1 shift right
+    for (let i = fromIndex; i >= 0; i--) {
+      if (i === 0) {
+        bars[i].style.height = `${movingHeight}px`;
+      } else {
+        // This position gets the value from its left neighbor
+        const neighborValue = arr[i - 1];
+        const neighborHeight = Math.max(1, Math.round(neighborValue * scale));
+        bars[i].style.height = `${neighborHeight}px`;
+      }
+    }
+
+    // Update states:
+    // - fromIndex: lower it, remove red, mark yellow
+    bars[fromIndex].classList.remove('is-comparing');
+    bars[fromIndex].classList.remove('is-special');
+    bars[fromIndex].style.transform = 'translateY(0)';
+    bars[fromIndex].classList.add('is-partly');
+    this._highlighted.delete(fromIndex);
+    this._special.delete(fromIndex);
+    this._partly.add(fromIndex);
+    
+    // - position 0: raise it, add red (it receives the moving bar, bigger value)
+    bars[0].classList.add('is-special');
+    const raise = calcRaise(bars[0]);
+    bars[0].style.transform = `translateY(-${raise}px)`;
+    this._special.add(0);
+    
+    // - positions 1 to fromIndex-1: ensure they stay lowered and yellow
+    for (let i = 1; i < fromIndex; i++) {
+      bars[i].classList.remove('is-comparing');
+      bars[i].classList.remove('is-special');
+      bars[i].style.transform = 'translateY(0)';
+      bars[i].classList.add('is-partly');
+      this._highlighted.delete(i);
+      this._special.delete(i);
+      this._partly.add(i);
+    }
+
+    // Update the data array to match
+    for (let i = fromIndex; i > 0; i--) {
+      arr[i] = arr[i - 1];
+    }
+    arr[0] = movingValue;
 
     // Wait for CSS transition to animate all height changes
     await this.sleep(250);

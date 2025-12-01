@@ -3,9 +3,11 @@
 
 import { Visualizer } from './visualizer.js';
 import { bubbleSort } from './algorithms/bubbleSort.js';
+import { insertionSort } from './algorithms/insertionSort.js';
 import { mergeSort } from './algorithms/mergeSort.js';
 import { heapSort } from './algorithms/heapSort.js';
 import { selectionSort } from './algorithms/selectionSort.js';
+import { quickSort } from './algorithms/quickSort.js';
 import { getAlgorithmDescription } from './algorithmDescriptions.js';
 
 
@@ -178,10 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Map algorithm names to runner functions
   const RUNNERS = {
     'Bubble Sort': bubbleSort,
-    'Merge Sort': mergeSort,
-    'Heap Sort': heapSort,
+    'Insertion Sort': insertionSort,
     'Selection Sort': selectionSort,
-    // Other algorithms can be added here when implemented
+    'Merge Sort': mergeSort,
+    'Quick Sort': quickSort,
+    'Heap Sort': heapSort,
+    // All algorithms implemented!
   };
 
   // UI helpers for Play/Pause button label
